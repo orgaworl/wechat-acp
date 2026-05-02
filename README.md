@@ -1,5 +1,7 @@
 # WeChat ACP
 
+[![NPM Downloads](https://img.shields.io/npm/d18m/wechat-acp)](https://www.npmjs.com/package/wechat-acp)
+
 Bridge WeChat direct messages to any ACP-compatible AI agent.
 
 `wechat-acp` logs in with the WeChat iLink bot API, polls incoming 1:1 messages, forwards them to an ACP agent over stdio, and sends the agent reply back to WeChat.
