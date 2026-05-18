@@ -87,15 +87,38 @@ export interface WeChatAcpConfig {
   };
   storage: {
     dir: string;
+    instance?: string;
   };
 }
 
-export function defaultStorageDir(): string {
-  return path.join(os.homedir(), ".wechat-acp");
+const INSTANCE_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+
+/**
+ * Validate an instance name. Names are used as a directory segment under
+ * `~/.wechat-acp/instances/`, so we restrict them to a safe character set
+ * to prevent path traversal (`..`, absolute paths) and platform-specific
+ * issues with hidden / reserved names.
+ */
+export function validateInstanceName(instance: string): void {
+  if (!INSTANCE_NAME_PATTERN.test(instance)) {
+    throw new Error(
+      `Invalid --instance name: ${JSON.stringify(instance)}. ` +
+        "Must be 1-64 chars, start with a letter or digit, " +
+        "and contain only letters, digits, '.', '_', or '-'.",
+    );
+  }
 }
 
-export function defaultConfig(): WeChatAcpConfig {
-  const storageDir = defaultStorageDir();
+export function defaultStorageDir(instance?: string): string {
+  const root = path.join(os.homedir(), ".wechat-acp");
+  if (!instance) return root;
+  validateInstanceName(instance);
+  return path.join(root, "instances", instance);
+}
+
+export function defaultConfig(opts?: { instance?: string }): WeChatAcpConfig {
+  const instance = opts?.instance;
+  const storageDir = defaultStorageDir(instance);
   return {
     wechat: {
       baseUrl: "https://ilinkai.weixin.qq.com",
@@ -121,6 +144,7 @@ export function defaultConfig(): WeChatAcpConfig {
     },
     storage: {
       dir: storageDir,
+      instance,
     },
   };
 }

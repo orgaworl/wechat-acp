@@ -19,8 +19,10 @@ import qrcodeTerminal from "qrcode-terminal";
 import { WeChatAcpBridge } from "../src/bridge.js";
 import {
   defaultConfig,
+  defaultStorageDir,
   listBuiltInAgents,
   resolveAgentSelection,
+  validateInstanceName,
 } from "../src/config.js";
 import type { WeChatAcpConfig } from "../src/config.js";
 import {
@@ -53,6 +55,11 @@ Options:
   --login             Force re-login (new QR code)
   --daemon            Run in background after login
   --config <file>     Config file path (JSON)
+  --instance <name>   Run as a named, isolated instance.
+                      Storage, token, daemon pid/log, and telemetry id are
+                      scoped to ~/.wechat-acp/instances/<name>/.
+                      Lets you run multiple bridges side by side, each with
+                      its own WeChat account and project cwd.
   --idle-timeout <m>  Session idle timeout in minutes (default: 1440)
                       Use 0 to disable idle cleanup
   --max-sessions <n>  Max concurrent user sessions (default: 10)
@@ -69,6 +76,7 @@ function parseArgs(argv: string[]): {
   forceLogin: boolean;
   daemon: boolean;
   configFile?: string;
+  instance?: string;
   idleTimeout?: number;
   maxSessions?: number;
   hideThoughts: boolean;
@@ -109,6 +117,9 @@ function parseArgs(argv: string[]): {
         break;
       case "--config":
         result.configFile = args[++i];
+        break;
+      case "--instance":
+        result.instance = args[++i];
         break;
       case "--idle-timeout":
         result.idleTimeout = parseInt(args[++i], 10);
@@ -235,7 +246,16 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  const config = defaultConfig();
+  if (args.instance !== undefined) {
+    try {
+      validateInstanceName(args.instance);
+    } catch (err) {
+      console.error(`Error: ${(err as Error).message}`);
+      process.exit(1);
+    }
+  }
+
+  const config = defaultConfig({ instance: args.instance });
 
   // Load config file if specified
   if (args.configFile) {
@@ -246,6 +266,15 @@ async function main(): Promise<void> {
     Object.assign(config.session, fileConfig.session ?? {});
     Object.assign(config.daemon, fileConfig.daemon ?? {});
     Object.assign(config.storage, fileConfig.storage ?? {});
+  }
+
+  // CLI --instance always wins over config-file storage.dir so users can
+  // run a config in multiple isolated instances without editing the file.
+  if (args.instance) {
+    config.storage.instance = args.instance;
+    config.storage.dir = defaultStorageDir(args.instance);
+    config.daemon.logFile = path.join(config.storage.dir, "wechat-acp.log");
+    config.daemon.pidFile = path.join(config.storage.dir, "daemon.pid");
   }
 
   // Handle subcommands
