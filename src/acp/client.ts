@@ -104,6 +104,7 @@ export class WeChatAcpClient implements acp.Client {
         if (update.status) {
           this.opts.log(`[tool] ${update.toolCallId} → ${update.status}`);
         }
+        await this.maybeSendTyping();
         break;
 
       case "plan":
@@ -114,6 +115,7 @@ export class WeChatAcpClient implements acp.Client {
             .join("\n");
           this.opts.log(`[plan]\n${items}`);
         }
+        await this.maybeSendTyping();
         break;
     }
   }
