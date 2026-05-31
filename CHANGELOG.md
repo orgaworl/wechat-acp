@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1
+
+- Fix intermediate WeChat messages being delivered multiple times, out of order, or losing the trailing segments. Concurrent boundary flushes now go through a per-client mutex chain; each reply segment retries with a stable `client_id` so the iLink gateway de-duplicates; and a failed segment no longer aborts the remaining segments in the same reply (#41).
+- Auto-publish prereleases from `main` to the `@next` dist-tag on every push, versioned as `<base>-next.<UTC-timestamp>.<short-sha>` (where `<base>` is the next patch above `@latest`). Stable users keep using `@latest`. See README's "Trying preview builds".
+- Run `npm test` in CI on every push and PR, and gate both `latest` and `next` publishes on passing tests.
+
 ## 0.7.0
 
 - Add `/acp-prompt-start` and `/acp-prompt-done` bridge commands so users can buffer multiple WeChat messages (text + image + file, in any order) and flush them to the agent as a single prompt — works around WeChat's inability to send mixed content in one message. Buffering is per-user and held in memory, with a 10-minute inactivity TTL and a 50-block cap. Adds two telemetry events: `command.buffer_start` and `command.buffer_done` (with collected block count). Total event types: 15. See the README's "Multi-part message buffering" section.
