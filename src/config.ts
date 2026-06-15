@@ -126,6 +126,7 @@ export interface WeChatAcpConfig {
     env?: Record<string, string>;
     showThoughts: boolean;
     showDiffs?: boolean;
+    resumeSessionId?: string;
   };
   agents: Record<string, AgentPreset>;
   session: {

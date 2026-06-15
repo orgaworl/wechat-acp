@@ -57,6 +57,8 @@ Options:
                       Presets: ${presets}
                       Examples: "copilot", "claude", "npx tsx ./agent.ts"
   --cwd <dir>         Working directory for agent (default: current dir)
+  --resume <id>       Resume a previous Claude session by its session ID
+                      Only applies to the "claude" preset and compatible agents
   --login             Force re-login (new QR code)
   --daemon            Run in background after login
   --config <file>     Config file path (JSON)
@@ -122,6 +124,7 @@ function parseArgs(argv: string[]): {
   command?: string;
   agent?: string;
   cwd?: string;
+  resume?: string;
   forceLogin: boolean;
   daemon: boolean;
   configFile?: string;
@@ -168,6 +171,9 @@ function parseArgs(argv: string[]): {
         break;
       case "--cwd":
         result.cwd = args[++i];
+        break;
+      case "--resume":
+        result.resume = args[++i];
         break;
       case "--login":
         result.forceLogin = true;
@@ -480,6 +486,7 @@ async function main(): Promise<void> {
   }
 
   if (args.cwd) config.agent.cwd = path.resolve(args.cwd);
+  if (args.resume) config.agent.resumeSessionId = args.resume;
   if (args.idleTimeout !== undefined) {
     if (!Number.isFinite(args.idleTimeout) || args.idleTimeout < 0) {
       console.error("Error: invalid --idle-timeout value");

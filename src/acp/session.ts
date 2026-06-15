@@ -58,6 +58,7 @@ export interface SessionManagerOpts {
   agentArgs: string[];
   agentCwd: string;
   agentEnv?: Record<string, string>;
+  agentResumeSessionId?: string;
   agentPreset?: string;
   idleTimeoutMs: number;
   maxConcurrentUsers: number;
@@ -241,6 +242,7 @@ export class SessionManager {
       args: this.opts.agentArgs,
       cwd: this.opts.agentCwd,
       env: this.opts.agentEnv,
+      resumeSessionId: this.opts.agentResumeSessionId,
       client,
       log: (msg) => this.opts.log(`[${userId}] ${msg}`),
     });

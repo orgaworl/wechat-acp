@@ -21,10 +21,11 @@ export async function spawnAgent(params: {
   args: string[];
   cwd: string;
   env?: Record<string, string>;
+  resumeSessionId?: string;
   client: WeChatAcpClient;
   log: (msg: string) => void;
 }): Promise<AgentProcessInfo> {
-  const { command, args, cwd, env, client, log } = params;
+  const { command, args, cwd, env, resumeSessionId, client, log } = params;
 
   // On Windows, shell mode avoids EINVAL/ENOENT for command shims like npx/claude/gemini.
   const useShell = process.platform === "win32";
@@ -81,10 +82,15 @@ export async function spawnAgent(params: {
 
   // Create session
   log("Creating ACP session...");
-  const sessionResult = await connection.newSession({
+  const newSessionParams: Parameters<typeof connection.newSession>[0] = {
     cwd,
     mcpServers: [],
-  });
+  };
+  if (resumeSessionId) {
+    newSessionParams._meta = { claudeCode: { options: { resume: resumeSessionId } } };
+    log(`Resuming Claude session: ${resumeSessionId}`);
+  }
+  const sessionResult = await connection.newSession(newSessionParams);
   log(`ACP session created: ${sessionResult.sessionId}`);
 
   return {
